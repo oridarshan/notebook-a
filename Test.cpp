@@ -44,10 +44,10 @@ TEST_CASE("Good Input")
     //#1.5 10 character from 75 at the same line
     CHECK_NOTHROW(notebook1.write(0,2,75,Direction::Horizontal,"1234567890"));
     //#1.6 can write all relevant chars
-    for (int i = 33; i < 126; i++)//TODO finalize bounaries
+    for (int i = 38; i < 126; i++)
     {
         char c = (char)i;
-        CHECK_NOTHROW(notebook1.write(0, i, 0, Direction::Horizontal, (string)c));
+        CHECK_NOTHROW(notebook1.write(0, i, 0, Direction::Horizontal, std::string(1, c)));
     }
     //#1.7 write vertically
     CHECK_NOTHROW(notebook2.write(0,0,0,Direction::Vertical,"Hello!"));
@@ -65,6 +65,13 @@ TEST_CASE("Good Input")
     ABC__
     _C___
     */
+
+    //#2 erase from the notebook
+    CHECK_NOTHROW(notebook1.erase(10000, 0, 0, Direction::Horizontal, 5));
+    //#2 reerase
+    CHECK_NOTHROW(notebook1.erase(10000, 0, 0, Direction::Horizontal, 5));
+
+
 
     //#2 read from the notebook
     CHECK(notebook1.read(0,0,0,Direction::Horizontal,6) == "Hello!");
