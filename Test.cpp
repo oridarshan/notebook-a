@@ -18,7 +18,18 @@ using namespace std;
 Notebook notebook1;
 Notebook notebook2;
 
-// Commands that should generate errors
+string s =  "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789"
+            "0123456789";// 100 characters string
+
+
 TEST_CASE("Good Input")
 {
     //#1 write to the notebook:
@@ -28,16 +39,6 @@ TEST_CASE("Good Input")
     //#1.2 unlimited line count
     CHECK_NOTHROW(notebook1.write(0,10000,0,Direction::Horizontal,"place holder"));
     //#1.3 100 characters per line
-    string s =  "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789"
-                "0123456789";// 100 characters string
     CHECK_NOTHROW(notebook1.write(0,1,0,Direction::Horizontal,s));
     //#1.4 15 characters from column 85 (85-99)
     CHECK_NOTHROW(notebook1.write(0,2,85,Direction::Horizontal,"123456789012345"));
@@ -68,20 +69,71 @@ TEST_CASE("Good Input")
 
     //#2 erase from the notebook
     CHECK_NOTHROW(notebook1.erase(10000, 0, 0, Direction::Horizontal, 5));
-    //#2 reerase
+    //#2.1 reerase
     CHECK_NOTHROW(notebook1.erase(10000, 0, 0, Direction::Horizontal, 5));
+    //#2.2 erase blank lines 
+    CHECK_NOTHROW(notebook1.erase(11, 0, 0, Direction::Horizontal, 5));
+    //#2.3 erase 100 characters in a line
+    CHECK_NOTHROW(notebook1.erase(11, 0, 0, Direction::Horizontal, 100));
+    //#2.4 erase 15 characters from column 85 in a line
+    CHECK_NOTHROW(notebook1.erase(11, 0, 85, Direction::Horizontal, 15));
+    //#2.5 erase more than 100 characters vertically
+    CHECK_NOTHROW(notebook1.erase(11, 0, 0, Direction::Vertical, 105));
 
 
-
-    //#2 read from the notebook
+    //#3 read from the notebook
     CHECK(notebook1.read(0,0,0,Direction::Horizontal,6) == "Hello!");
-    //#2.1 read empty parts
-    CHECK(notebook1.read(0, 0, 55, Direction::Horizontal, 4) == "");
-    //#1
-    
-   
+    //#3.1 read empty parts
+    CHECK(notebook1.read(0, 0, 55, Direction::Horizontal, 4) == "____");
+    //#3.2 read erased parts
+    CHECK(notebook1.read(10000, 0, 0, Direction::Horizontal, 4) == "~~~~");
+    //#3.3 read vertically
+    CHECK(notebook1.read(101, 0 , 1, Direction::Vertical, 3) == "ABC");
+    //#3.4 read 100 characters from a line
+    CHECK_NOTHROW(notebook1.read(1, 0, 0, Direction::Horizontal, 100));
+    //#3.5 read 100+ characters vertically
+    CHECK(notebook2.read(0,0,1,Direction::Vertical,101) == s+"0");
+    //#3.6 reading unopened pages
+    CHECK_NOTHROW(notebook2.read(1000, 0, 0, Direction::Horizontal, 3));
 }
 
-TEST_CASE("Error Generating"){
-    //CHECK_NOTHROW(notebook.write(10000, 10000, 98, "*"));
+TEST_CASE("Bad Input"){
+    //#1 rewriting
+    CHECK_THROWS(notebook1.write(0, 0, 0, Direction::Horizontal, "*"));
+    //#1.1-1.4 writing outside boundaries
+    CHECK_THROWS(notebook1.write(-124, 22, 0, Direction::Horizontal, "*"));
+    CHECK_THROWS(notebook1.write(22, -23, 0, Direction::Horizontal, "*"));
+    CHECK_THROWS(notebook1.write(22, 22, -1, Direction::Horizontal, "*"));
+    CHECK_THROWS(notebook1.write(22, 22, 101, Direction::Horizontal, "*"));
+    //#1.5-1.6 writing more than 100 characters a line
+    CHECK_THROWS(notebook1.write(3, 0, 0, Direction::Horizontal, s+"0"));
+    CHECK_THROWS(notebook1.write(3, 1, 98, Direction::Horizontal, "012"));
+    //#1.7 faulty cross-writing
+    CHECK_NOTHROW(notebook1.write(70, 1 , 0, Direction::Horizontal, "ABC"));// should run
+    CHECK_THROWS(notebook1.write(70, 0 , 1, Direction::Vertical, "ABC"));
+    //#1.8 illegal characters
+    for (int i = 0; i < 36; i++)
+    {
+        char c = i;
+        CHECK_THROWS(notebook1.write(71,0,0,Direction::Horizontal, string(1,c)));
+    }
+    CHECK_THROWS(notebook1.write(71,0,0,Direction::Horizontal, string(1,126)));
+    CHECK_THROWS(notebook1.write(71,0,0,Direction::Horizontal, string(1,127)));
+    
+    
+    //#2.1-2.6 reading outside baudraries
+    CHECK_THROWS(notebook1.read(-124, 22, 0, Direction::Horizontal, 1));
+    CHECK_THROWS(notebook1.read(22, -23, 0, Direction::Horizontal, 1));
+    CHECK_THROWS(notebook1.read(22, 22, -1, Direction::Horizontal, 1));
+    CHECK_THROWS(notebook1.read(22, 22, 101, Direction::Horizontal, 1)); 
+    CHECK_THROWS(notebook1.read(22, 22, 70, Direction::Horizontal, 31)); 
+    CHECK_THROWS(notebook1.read(22, 22, 0, Direction::Horizontal, 101));
+
+    //#3.1-3.6 erasing outside baudraries
+    CHECK_THROWS(notebook1.erase(-124, 22, 0, Direction::Horizontal, 1));
+    CHECK_THROWS(notebook1.erase(22, -23, 0, Direction::Horizontal, 1));
+    CHECK_THROWS(notebook1.erase(22, 22, -1, Direction::Horizontal, 1));
+    CHECK_THROWS(notebook1.erase(22, 22, 101, Direction::Horizontal, 1)); 
+    CHECK_THROWS(notebook1.erase(22, 22, 70, Direction::Horizontal, 31)); 
+    CHECK_THROWS(notebook1.erase(22, 22, 0, Direction::Horizontal, 101)); 
 }
